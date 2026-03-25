@@ -17,19 +17,20 @@
 
         .materias {
             display: flex;
+            flex-wrap: wrap;
             justify-content: center;
-            gap: 20px;
+            gap: 15px;
             margin-top: 30px;
         }
 
         .materia {
             background-color: #ffffff;
             color: #1e90ff;
-            padding: 20px;
+            padding: 15px;
             border-radius: 10px;
             cursor: pointer;
             font-weight: bold;
-            width: 150px;
+            width: 180px;
             transition: 0.3s;
         }
 
@@ -43,7 +44,7 @@
         }
 
         textarea {
-            width: 60%;
+            width: 70%;
             height: 150px;
             border-radius: 10px;
             padding: 10px;
@@ -76,59 +77,75 @@
     <h1>Mochila do Victor 🎒</h1>
     <p>Clique na matéria para fazer anotações</p>
 
-    <div id="menu" class="materias">
-        <div class="materia" onclick="abrirMateria('matematica')">
-            Matemática
-        </div>
-        <div class="materia" onclick="abrirMateria('portugues')">
-            Português
-        </div>
-    </div>
+    <div id="menu" class="materias"></div>
 
-    <div id="matematica" class="anotacao">
-        <h2>Anotações de Matemática</h2>
-        <textarea id="texto-matematica"></textarea><br>
-        <button class="salvar" onclick="salvar('matematica')">Salvar</button>
-        <button class="sair" onclick="sair()">Sair</button>
-    </div>
-
-    <div id="portugues" class="anotacao">
-        <h2>Anotações de Português</h2>
-        <textarea id="texto-portugues"></textarea><br>
-        <button class="salvar" onclick="salvar('portugues')">Salvar</button>
+    <div id="area-anotacao" class="anotacao">
+        <h2 id="titulo-materia"></h2>
+        <textarea id="texto"></textarea><br>
+        <button class="salvar" onclick="salvar()">Salvar</button>
         <button class="sair" onclick="sair()">Sair</button>
     </div>
 
     <script>
+        const materias = [
+            "Filosofia",
+            "Historia",
+            "Geografia",
+            "Biologia",
+            "Artes",
+            "Sistemas Operacionais",
+            "Praticas Experimentais",
+            "Projeto de Vida",
+            "Gestão de Tempo",
+            "Poo Java",
+            "Noções de Robótica",
+            "Programação Web",
+            "Fisica",
+            "Arquitetura e Manutenção de Computadores",
+            "Quimica",
+            "Educação Financeira",
+            "Logica de Programação",
+            "Estudos Orientados",
+            "HTML",
+            "Sociologia",
+            "Ingles"
+        ];
+
+        let materiaAtual = "";
+
+        const menu = document.getElementById("menu");
+
+        materias.forEach(m => {
+            const div = document.createElement("div");
+            div.className = "materia";
+            div.innerText = m;
+            div.onclick = () => abrirMateria(m);
+            menu.appendChild(div);
+        });
+
         function abrirMateria(materia) {
-            document.getElementById('menu').style.display = 'none';
+            materiaAtual = materia;
+            document.getElementById("menu").style.display = "none";
+            document.getElementById("area-anotacao").style.display = "block";
+            document.getElementById("titulo-materia").innerText = "Anotações de " + materia;
 
-            document.getElementById('matematica').style.display = 'none';
-            document.getElementById('portugues').style.display = 'none';
-
-            document.getElementById(materia).style.display = 'block';
-
-            carregar(materia);
+            carregar();
         }
 
-        function salvar(materia) {
-            let texto = document.getElementById('texto-' + materia).value;
-            localStorage.setItem(materia, texto);
+        function salvar() {
+            let texto = document.getElementById("texto").value;
+            localStorage.setItem(materiaAtual, texto);
             alert("Anotação salva!");
         }
 
-        function carregar(materia) {
-            let textoSalvo = localStorage.getItem(materia);
-            if (textoSalvo) {
-                document.getElementById('texto-' + materia).value = textoSalvo;
-            }
+        function carregar() {
+            let textoSalvo = localStorage.getItem(materiaAtual);
+            document.getElementById("texto").value = textoSalvo ? textoSalvo : "";
         }
 
         function sair() {
-            document.getElementById('menu').style.display = 'flex';
-
-            document.getElementById('matematica').style.display = 'none';
-            document.getElementById('portugues').style.display = 'none';
+            document.getElementById("menu").style.display = "flex";
+            document.getElementById("area-anotacao").style.display = "none";
         }
     </script>
 
