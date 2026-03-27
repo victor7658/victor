@@ -2,19 +2,17 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Mochila do Victor</title>
+    <title>Mochila do Victor 🎒</title>
     <style>
         body {
             background-color: #1e90ff;
             font-family: Arial, sans-serif;
             color: white;
             text-align: center;
+            margin: 0;
+            padding: 0;
         }
-
-        h1 {
-            margin-top: 20px;
-        }
-
+        h1 { margin-top: 20px; }
         .materias {
             display: flex;
             flex-wrap: wrap;
@@ -22,7 +20,6 @@
             gap: 15px;
             margin-top: 30px;
         }
-
         .materia {
             background-color: #ffffff;
             color: #1e90ff;
@@ -33,124 +30,179 @@
             width: 180px;
             transition: 0.3s;
         }
-
-        .materia:hover {
-            background-color: #e0e0e0;
-        }
-
-        .anotacao {
-            margin-top: 30px;
-            display: none;
-        }
-
+        .materia:hover { background-color: #e0e0e0; }
+        .anotacao { margin-top: 30px; display: none; }
         textarea {
             width: 70%;
-            height: 150px;
+            height: 200px;
             border-radius: 10px;
-            padding: 10px;
+            padding: 15px;
             border: none;
             resize: none;
+            font-size: 16px;
         }
-
         button {
             margin: 10px;
-            padding: 10px 20px;
+            padding: 12px 25px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
         }
-
-        .salvar {
-            background-color: #28a745;
-            color: white;
+        .salvar { background-color: #28a745; color: white; }
+        .sair { background-color: #dc3545; color: white; }
+        .login-container {
+            margin-top: 100px;
         }
-
-        .sair {
-            background-color: #dc3545;
-            color: white;
+        .info {
+            font-size: 14px;
+            margin-top: 10px;
+            opacity: 0.9;
         }
     </style>
+    <!-- Firebase SDK (versão mais recente) -->
+    <script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
-
     <h1>Mochila do Victor 🎒</h1>
-    <p>Clique na matéria para fazer anotações</p>
 
+    <!-- Tela de Login -->
+    <div id="login-screen" class="login-container">
+        <h2>🔐 Suas anotações agora ficam na nuvem!</h2>
+        <p>Faça login com sua conta Google para sincronizar<br>em todos os seus computadores e celulares.</p>
+        <button onclick="loginComGoogle()" style="background:#4285F4; color:white; padding:15px 30px; font-size:18px;">
+            Entrar com Google
+        </button>
+    </div>
+
+    <!-- Menu principal -->
     <div id="menu" class="materias"></div>
 
+    <!-- Área de anotação -->
     <div id="area-anotacao" class="anotacao">
         <h2 id="titulo-materia"></h2>
+        <p id="info-salvo" class="info"></p>
         <textarea id="texto"></textarea><br>
-        <button class="salvar" onclick="salvar()">Salvar</button>
-        <button class="sair" onclick="sair()">Sair</button>
+        <button class="salvar" onclick="salvar()">💾 Salvar</button>
+        <button class="sair" onclick="sair()">Sair da matéria</button>
     </div>
 
     <script>
-        const materias = [
-            "Matemática",
-            "Português",
-            "Educação Física",
-            "Filosofia",
-            "Historia",
-            "Geografia",
-            "Biologia",
-            "Artes",
-            "Sistemas Operacionais",
-            "Praticas Experimentais",
-            "Projeto de Vida",
-            "Gestão de Tempo",
-            "Poo Java",
-            "Noções de Robótica",
-            "Programação Web",
-            "Fisica",
-            "Arquitetura e Manutenção de Computadores",
-            "Quimica",
-            "Educação Financeira",
-            "Logica de Programação",
-            "Estudos Orientados",
-            "HTML",
-            "Sociologia",
-            "Ingles"
-        ];
+        // ================== CONFIGURAÇÃO FIREBASE ==================
+        const firebaseConfig = {
+            // COLE AQUI O firebaseConfig que você copiou do Firebase Console
+            apiKey: "SUA_API_KEY_AQUI",
+            authDomain: "SEU-PROJETO.firebaseapp.com",
+            projectId: "SEU-PROJETO",
+            storageBucket: "SEU-PROJETO.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
         let materiaAtual = "";
+        let usuarioAtual = null;
 
-        const menu = document.getElementById("menu");
+        const materias = [
+            "Matemática", "Português", "Educação Física", "Filosofia", "História",
+            "Geografia", "Biologia", "Artes", "Sistemas Operacionais", "Práticas Experimentais",
+            "Projeto de Vida", "Gestão de Tempo", "POO - Java", "Noções de Robótica",
+            "Programação Web", "Física", "Arquitetura e Manutenção de Computadores",
+            "Química", "Educação Financeira", "Lógica de Programação",
+            "Estudos Orientados", "HTML", "Sociologia", "Inglês"
+        ];
 
-        materias.forEach(m => {
-            const div = document.createElement("div");
-            div.className = "materia";
-            div.innerText = m;
-            div.onclick = () => abrirMateria(m);
-            menu.appendChild(div);
-        });
+        // ================== LOGIN COM GOOGLE ==================
+        function loginComGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider)
+                .then(() => {
+                    // login bem sucedido → esconde tela de login
+                    document.getElementById("login-screen").style.display = "none";
+                    document.getElementById("menu").style.display = "flex";
+                    carregarMenu();
+                })
+                .catch(error => alert("Erro ao fazer login: " + error.message));
+        }
+
+        // ================== MENU ==================
+        function carregarMenu() {
+            const menu = document.getElementById("menu");
+            menu.innerHTML = "";
+            materias.forEach(m => {
+                const div = document.createElement("div");
+                div.className = "materia";
+                div.innerText = m;
+                div.onclick = () => abrirMateria(m);
+                menu.appendChild(div);
+            });
+        }
 
         function abrirMateria(materia) {
             materiaAtual = materia;
             document.getElementById("menu").style.display = "none";
             document.getElementById("area-anotacao").style.display = "block";
             document.getElementById("titulo-materia").innerText = "Anotações de " + materia;
-
-            carregar();
+            carregarAnotacao();
         }
 
-        function salvar() {
-            let texto = document.getElementById("texto").value;
-            localStorage.setItem(materiaAtual, texto);
-            alert("Anotação salva!");
+        // ================== SALVAR E CARREGAR ==================
+        async function salvar() {
+            if (!usuarioAtual) return;
+            const texto = document.getElementById("texto").value;
+
+            await db.collection(`users/${usuarioAtual.uid}/anotacoes`)
+                .doc(materiaAtual)
+                .set({
+                    texto: texto,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+            alert("✅ Anotação salva na nuvem!");
+            carregarAnotacao(); // atualiza a data
         }
 
-        function carregar() {
-            let textoSalvo = localStorage.getItem(materiaAtual);
-            document.getElementById("texto").value = textoSalvo ? textoSalvo : "";
+        async function carregarAnotacao() {
+            if (!usuarioAtual) return;
+            const doc = await db.collection(`users/${usuarioAtual.uid}/anotacoes`)
+                .doc(materiaAtual)
+                .get();
+
+            const data = doc.exists ? doc.data() : { texto: "" };
+            document.getElementById("texto").value = data.texto || "";
+
+            // Mostra quando foi salvo
+            const info = document.getElementById("info-salvo");
+            if (data.updatedAt) {
+                const dataFormatada = data.updatedAt.toDate().toLocaleString("pt-BR");
+                info.innerHTML = `Última alteração: ${dataFormatada}`;
+            } else {
+                info.innerHTML = "";
+            }
         }
 
         function sair() {
             document.getElementById("menu").style.display = "flex";
             document.getElementById("area-anotacao").style.display = "none";
         }
-    </script>
 
+        // ================== VERIFICA SE JÁ ESTÁ LOGADO ==================
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                usuarioAtual = user;
+                document.getElementById("login-screen").style.display = "none";
+                document.getElementById("menu").style.display = "flex";
+                carregarMenu();
+            } else {
+                document.getElementById("login-screen").style.display = "block";
+                document.getElementById("menu").style.display = "none";
+            }
+        });
+    </script>
 </body>
 </html>
